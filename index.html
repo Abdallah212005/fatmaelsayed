@@ -182,6 +182,36 @@ nav{position:fixed;top:0;left:0;right:0;z-index:40;display:flex;align-items:cent
 .brand-art:hover img{scale:1.035}
 .brand-art figcaption{position:absolute;left:12px;bottom:10px;color:#fff;font-size:10px;font-weight:600;letter-spacing:.13em;text-shadow:0 1px 8px #000;text-transform:uppercase;opacity:.82}
 .brand-work.light .brand-art figcaption{color:#fff}
+.js .brand-work.light{--wipe-bg:var(--cream);--wipe-title:#151515}
+.js .brand-work.dark{--wipe-bg:var(--ink);--wipe-title:#fff}
+/* SECTION ENTRANCE — a title-card curtain covers the first screen of each project, plays its title, then lifts to reveal the work */
+.js .brand-work{isolation:isolate}
+.js .brand-work::before{content:"";position:absolute;top:0;left:0;width:100%;height:2px;z-index:7;background:var(--red);transform:scaleX(0);transform-origin:left;transition:transform 1.1s cubic-bezier(.7,0,.2,1) .9s}
+.js .brand-work.section-in::before{transform:scaleX(1)}
+.js .section-transition-title{position:absolute;top:0;left:0;right:0;height:100vh;height:100svh;z-index:6;pointer-events:none;overflow:hidden}
+.js .st-curtain{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:clamp(12px,1.8vw,26px);padding:0 5vw;background:var(--wipe-bg);will-change:transform}
+.js .st-curtain::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--red);opacity:0}
+.js .st-num{position:absolute;right:3vw;top:50%;translate:0 -50%;font:700 clamp(150px,34vw,520px)/.7 var(--serif);color:transparent;-webkit-text-stroke:1.5px var(--red);opacity:0;user-select:none}
+.js .st-meta{position:relative;font:600 12px/1 var(--sans);letter-spacing:.32em;text-transform:uppercase;color:var(--wipe-title);opacity:0}
+.js .st-meta b{color:var(--red);font-weight:700}
+.js .st-name{position:relative;max-width:82%;overflow:hidden;padding-bottom:.1em;font:700 clamp(40px,8.5vw,128px)/.98 var(--serif);color:var(--wipe-title)}
+.js .st-name .w{display:inline-block;white-space:nowrap}
+.js .st-name i{display:inline-block;font-style:normal;transform:translateY(112%)}
+.js .st-rule{position:relative;width:min(170px,32vw);height:2px;background:var(--red);transform:scaleX(0);transform-origin:left}
+.js .brand-work.section-in .st-meta{animation:st-fade .5s ease .05s both}
+.js .brand-work.section-in .st-num{animation:st-num .9s cubic-bezier(.2,.8,.2,1) .05s both}
+.js .brand-work.section-in .st-name i{animation:st-char .55s cubic-bezier(.2,.8,.2,1) calc(var(--d,0ms) + 90ms) both}
+.js .brand-work.section-in .st-rule{animation:st-rule .6s cubic-bezier(.7,0,.2,1) .35s both}
+.js .brand-work.section-in .st-curtain{animation:st-lift .8s cubic-bezier(.76,0,.24,1) .72s both}
+.js .brand-work.section-in .st-curtain::after{opacity:1}
+@keyframes st-fade{from{opacity:0;translate:0 10px}to{opacity:1;translate:0 0}}
+@keyframes st-num{from{opacity:0;translate:40px -50%}to{opacity:.4;translate:0 -50%}}
+@keyframes st-char{from{transform:translateY(112%)}to{transform:none}}
+@keyframes st-rule{to{transform:scaleX(1)}}
+@keyframes st-lift{to{transform:translateY(-100%)}}
+@media(max-width:650px){.js .st-meta{font-size:10px;letter-spacing:.24em}.js .st-name{max-width:100%}}
+.scroll .kb{padding-left:14px;border-left:1px solid rgba(255,255,255,.25);opacity:.6;letter-spacing:.14em}
+@media(hover:none){.scroll .kb{display:none}}
 
 /* CTA BANNER */
 .cta{min-height:min(48vw,620px);display:flex;align-items:center;justify-content:flex-start;padding:5vw 9vw;overflow:hidden;border-top:1px solid #222;text-align:left}
@@ -402,7 +432,7 @@ html{scroll-snap-type:y proximity}
    <p>Turning ideas into visuals that make an impact.</p>
   <a class="btn" href="#work"><span class="lbl"><span data-l="View My Work">View My Work</span></span><i class="btn-cut" aria-hidden="true"></i><span class="btn-arrow" aria-hidden="true"></span></a>
   </div>
-  <div class="scroll"><span class="mouse">↓</span>Explore my art</div>
+  <div class="scroll"><span class="mouse">↓</span>Explore my art<span class="kb">Use ↑ ↓ keys</span></div>
   <div class="hand r"><svg class="crown"><use href="#crown"/></svg>Good<br>Design<br>Hits<br>Different.</div>
  </header>
 
@@ -892,11 +922,38 @@ hh.innerHTML=[...ht].map((c,i)=>`<span class="c" aria-hidden="true" style="--i:$
 const hero=document.querySelector('.hero');
 if(document.documentElement.classList.contains('js')){
  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.2,rootMargin:'0px 0px -6% 0px'});
+ /* project images wait under the curtain until it lifts, then reveal in a stagger */
+ const artIO=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;const a=e.target,sec=a.closest('.brand-work');artIO.unobserve(a);if(sec&&!sec.classList.contains('revealed'))(sec._pend=sec._pend||[]).push(a);else a.classList.add('in')}),{threshold:0,rootMargin:'0px 0px -10% 0px'});
+ const LIFT=900;
+ const sectionIO=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;const s=e.target;sectionIO.unobserve(s);s.classList.add('section-in');setTimeout(()=>{s.classList.add('revealed');const h=s.querySelector('.brand-head');if(h)h.classList.add('in');(s._pend||[]).forEach(a=>a.classList.add('in'));s._pend=[]},LIFT)}),{threshold:0,rootMargin:'0px 0px -35% 0px'});
  const rv=(s,c,st=90)=>document.querySelectorAll(s).forEach((e,i)=>{e.classList.add('rv',c);e.style.setProperty('--d',(i%6)*st+'ms');io.observe(e)});
- rv('.about .tag,.about h2,.about p,.about hr,.services .tag,.services h2,.services>div>p,.brand-head,.process .tag,.process h2,.process>p,.process hr,.testi .tag,.testi h2,.qm,.tq,.arrows,.contact>.tag,.contact h2,.contact>p,footer>*:not(.hand)','up');
+ rv('.about .tag,.about h2,.about p,.about hr,.services .tag,.services h2,.services>div>p,.process .tag,.process h2,.process>p,.process hr,.testi .tag,.testi h2,.qm,.tq,.arrows,.contact>.tag,.contact h2,.contact>p,footer>*:not(.hand)','up');
  rv('.traits div,.steps div','up',130);
  rv('.svc','left',110);rv('.contact li','right',130);
- rv('.brand-art','pop',110);
+ const brandMotions=['pop','left','curtain','right','wr','up','drop'];
+ const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ const works=[...document.querySelectorAll('.brand-work')],N=String(works.length).padStart(2,'0');
+ works.forEach((section,index)=>{
+  const motion=brandMotions[index%brandMotions.length];
+  const heading=section.querySelector('.brand-head');
+  const name=(section.querySelector('.brand-title')?.textContent||'').trim();
+  const num=String(index+1).padStart(2,'0');
+  const step=Math.min(26,320/Math.max(name.length,1));let ci=0;
+  const words=name.split(/\s+/).map(w=>'<span class="w">'+[...w].map(c=>'<i style="--d:'+Math.round(ci++*step)+'ms">'+esc(c)+'</i>').join('')+'</span>').join(' ');
+  const layer=document.createElement('span');
+  layer.className='section-transition-title';
+  layer.setAttribute('aria-hidden','true');
+  layer.innerHTML='<span class="st-curtain"><span class="st-num">'+num+'</span><span class="st-meta"><b>'+num+'</b> / '+N+' &mdash; Visual Story</span><span class="st-name">'+words+'</span><span class="st-rule"></span></span>';
+  section.append(layer);
+  if(heading){heading.dataset.revealMotion=brandMotions[(index+2)%brandMotions.length];heading.classList.add('rv',heading.dataset.revealMotion)}
+  sectionIO.observe(section);
+  section.querySelectorAll('.brand-art').forEach((art,artIndex)=>{
+   art.dataset.revealMotion=motion;
+   art.classList.add('rv',motion);
+   art.style.setProperty('--d',(artIndex%6)*110+'ms');
+   artIO.observe(art);
+  });
+ });
  rv('.pol','drop',0);
  rv('.about .hand,.services .hand,.testi .hand,.contact .hand,.bottom .hand,footer .hand','wr',0);
  rv('.cta h2,.eye .slot','curtain',0);rv('.cta .btn','up',0);
@@ -911,6 +968,26 @@ let ti=0;const tq=document.querySelector('.tq');
 function show(n){tq.classList.add('sw');setTimeout(()=>{ti=(n+T.length)%T.length;q.textContent='“'+T[ti][0]+'”';nm.textContent=T[ti][1];rl.textContent=T[ti][2];ct.textContent=(ti+1)+' / '+T.length;tq.classList.remove('sw')},450)}
 q.textContent='“'+T[0][0]+'”';nm.textContent=T[0][1];rl.textContent=T[0][2];
 pv.onclick=()=>show(ti-1);nx.onclick=()=>show(ti+1);
+/* Keyboard: ↓ / ↑ jump one full section (Space, PageDown and the mouse wheel still scroll normally) */
+(()=>{
+ const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+ let lock=0;
+ const tops=()=>{const out=[];document.querySelectorAll('.sec').forEach(el=>{const t=Math.round(el.getBoundingClientRect().top+scrollY);if(!out.some(v=>Math.abs(v-t)<8))out.push(t)});return out.sort((a,b)=>a-b)};
+ const go=(top,smooth)=>{if(smooth)scrollTo({top,behavior:'smooth'});else{const d=document.documentElement;d.style.scrollBehavior='auto';scrollTo(0,top);d.style.scrollBehavior=''}};
+ addEventListener('keydown',e=>{
+  if((e.key!=='ArrowDown'&&e.key!=='ArrowUp')||e.altKey||e.ctrlKey||e.metaKey||e.shiftKey||e.defaultPrevented)return;
+  const t=e.target;if(t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)))return;
+  const y=scrollY,max=document.documentElement.scrollHeight-innerHeight,list=tops();
+  let dest;
+  if(e.key==='ArrowDown'){dest=list.find(v=>v>y+24);if(dest==null){if(y<max-24)dest=max;else return}}
+  else{for(let i=list.length-1;i>=0;i--)if(list[i]<y-24){dest=list[i];break}if(dest==null)return}
+  e.preventDefault();
+  if(e.repeat||Date.now()<lock)return;
+  lock=Date.now()+550;
+  dest=Math.max(0,Math.min(dest,max));
+  go(dest,!reduce&&Math.abs(dest-y)<=innerHeight*2.2);
+ });
+})();
 </script>
 </body>
 </html>
